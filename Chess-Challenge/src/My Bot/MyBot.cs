@@ -1,4 +1,6 @@
-﻿using ChessChallenge.API;
+﻿#define DEBUG
+
+using ChessChallenge.API;
 using System;
 
 public class MyBot : IChessBot
@@ -93,7 +95,9 @@ public class MyBot : IChessBot
                 break;
 
 #if DEBUG
-            Console.WriteLine($"info depth {depth} score: {score} nodes {nodes} pv {bestMoveRoot}");
+            ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
+            ulong nps = nodes * 1000 / Math.Max(time, 1);
+            Console.WriteLine($"info depth {depth} score: {score} time {time} nodes {nodes} nps {nps} pv {bestMoveRoot}");
 #endif
 
             bestMove = bestMoveRoot;
