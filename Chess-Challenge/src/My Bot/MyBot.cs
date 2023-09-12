@@ -3,8 +3,8 @@ using System;
 
 public class MyBot : IChessBot
 {
-#if DEBUG
-    ulong nodes = 0;
+#if UCI
+    public ulong nodes = 0;
 #endif
 
     readonly int[] weights = new int[6169];
@@ -23,16 +23,24 @@ public class MyBot : IChessBot
         }
     }
 
+#if UCI
+    public Move Think(Board board, Timer timer) => ThinkInternal(board, timer);
+
+    public Move ThinkInternal(Board board, Timer timer, int maxDepth = 50, bool report = true)
+#else
     public Move Think(Board board, Timer timer)
+#endif
     {
         Move bestMove = default, bestMoveRoot = default;
 
-#if DEBUG
+#if UCI
         nodes = 0;
-#endif
+        for (int depth = 0; ++depth <= maxDepth;)
+#else
         for (int depth = 0; ++depth <= 50;)
+#endif
         {
-#if DEBUG
+#if UCI
             int score =
 #endif
             Search(-30000, 30000, depth, 0);
@@ -40,10 +48,15 @@ public class MyBot : IChessBot
             if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
                 break;
 
-#if DEBUG
-            ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
-            ulong nps = nodes * 1000 / Math.Max(time, 1);
-            Console.WriteLine($"info depth {depth} score: {score} time {time} nodes {nodes} nps {nps} pv {bestMoveRoot}");
+#if UCI
+            if (report)
+            {
+                ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
+                ulong nps = nodes * 1000 / Math.Max(time, 1);
+                Console.WriteLine(
+                    $"info depth {depth} score: {score} time {time} nodes {nodes} nps {nps} pv {bestMoveRoot}"
+                );
+            }
 #endif
 
             bestMove = bestMoveRoot;
@@ -58,7 +71,7 @@ public class MyBot : IChessBot
             if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
                 return 30000;
 
-#if DEBUG
+#if UCI
             nodes++;
 #endif
             ulong key = board.ZobristKey % 1048576;
