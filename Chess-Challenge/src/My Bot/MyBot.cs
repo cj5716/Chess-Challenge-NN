@@ -1,6 +1,4 @@
-﻿#define DEBUG
-
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System;
 
 public class MyBot : IChessBot
@@ -119,14 +117,14 @@ public class MyBot : IChessBot
         {
             var accumulators = new int[2, 8];
 
-            void updateAcc(int side, int feature)
+            void updateAccumulator(int side, int feature)
             {
                 for (int i = 0; i < 8; i++)
                     accumulators[side, i] += weights[feature * 8 + i];
             }
 
-            updateAcc(0, 768);
-            updateAcc(1, 768);
+            updateAccumulator(0, 768);
+            updateAccumulator(1, 768);
 
             foreach (bool side in new[] { true, false })
                 for (var p = 1; p <= 6; p++)
@@ -136,21 +134,21 @@ public class MyBot : IChessBot
                     while (mask != 0)
                     {
                         int sq = BitboardHelper.ClearAndGetIndexOfLSB(ref mask);
-                        updateAcc(0, whiteOffset + piece + sq);
-                        updateAcc(1, 384 - whiteOffset + piece + (sq ^ 56));
+                        updateAccumulator(0, whiteOffset + piece + sq);
+                        updateAccumulator(1, 384 - whiteOffset + piece + (sq ^ 56));
                     }
                 }
 
             int eval = weights[6168], stm = board.IsWhiteToMove ? 0 : 1;
 
-            void sum(int side, int offset)
+            void flattenAccumulator(int side, int offset)
             {
                 for (int i = 0; i < 8; i++)
                     eval += Math.Clamp(accumulators[side, i], 0, 32) * weights[6152 + offset + i];
             }
 
-            sum(stm, 0);
-            sum(1 - stm, 8);
+            flattenAccumulator(stm, 0);
+            flattenAccumulator(1 - stm, 8);
 
             return eval * 400 / 1024;
         }
