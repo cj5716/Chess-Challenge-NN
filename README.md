@@ -1,16 +1,15 @@
 # Chess Coding Challenge (C#) Example
 
-This is an example bot for Seb Lague's [Chess Coding Challenge](https://youtu.be/iScy18pVR58),
-it implements only the most basic features for a functional chess engine. Little effort has
-been made to optimise for tokens, apart from implementing Quiescence Search inside the normal
-search function (rather than in a separate function).
-
 ### Search
+
+#### Core
 - Alpha-Beta Negamax
 - Quiescence Search
 - Iterative Deepening
-- Transposition Table (Ordering & Cutoffs)
+
+#### Move ordering
+- Transposition Table
 - MVV-LVA for Captures
 
 ### Evaluation
-- Quantised & Compressed PeSTO Piece-Square Tables
+- `768 -> 8x2 -> 1` Neural Network
