@@ -3,25 +3,27 @@ using System;
 
 public class MyBot : IChessBot
 {
-    Move bestMoveRoot = Move.NullMove;
+#if DEBUG
+    ulong nodes = 0;
+#endif
 
     readonly int[] weights = new int[6169];
-    Move[] tt = new Move[1048576];
+    readonly Move[] tt = new Move[1048576];
 
     public MyBot()
     {
-        for (int i = 0; i < 6169; i++)
+        for (int i = 0; i < 6169;)
         {
-            int[] packed = decimal.GetBits(packedWeights[i / 16]);
-            int num = (i % 16) * 6;
+            var packed = decimal.GetBits(packedWeights[i / 16]);
+            int num = i % 16 * 6;
             uint adj = ((uint)packed[num / 32] >> (num % 32)) & 63;
             if (num == 30) adj += ((uint)packed[1] & 15) << 2;
             if (num == 60) adj += ((uint)packed[2] & 3) << 4;
-            weights[i] = (int)adj - 31;
+            weights[i++] = (int)adj - 31;
         }
     }
 
-    decimal[] packedWeights = new[] {
+    readonly decimal[] packedWeights = {
         38985286316542769292061308895m,38985286316542769292061308895m,38985286316542769292061308895m,38985286316542769292061308895m,39043314753596443297281071264m,39081702868520201031740672095m,39081698444795572431385377119m,45289555917781785543762115101m,
         39043314827419448319361800352m,39062053173048376264613021855m,41518595313092894469403560351m,45270208382301472867895601692m,39062973890415366771247003873m,39023669781734662174119156000m,39042710438350941830515378529m,45270199011355483493236595104m,
         37805690670234183664964573408m,39042719735511358027898669282m,39042398834780511335723944165m,44031937848789368612697528608m,36645130662883673247360583967m,32911359358314127467443493031m,37803844815236603486117145002m,42813019724210846520489388453m,
@@ -73,116 +75,132 @@ public class MyBot : IChessBot
         1199258990120150323122791890m,12094695517970494m,
     };
 
-    public int Evaluate(Board board) {
-        int[,] accumulators = new int[2, 8];
-
-        void updateAcc(int side, int feature) {
-            for (int i = 0; i < 8; i++)
-                accumulators[side, i] += weights[feature * 8 + i];
-        }
-
-        updateAcc(0, 768);
-        updateAcc(1, 768);
-
-        foreach (bool side in new[] {true, false}) {
-            for (var p = PieceType.Pawn; p <= PieceType.King; p++) {
-                int piece = (int)p * 64 - 64, whiteOffset = side ? 0 : 384;
-                ulong mask = board.GetPieceBitboard(p, side);
-                while(mask != 0) {
-                    int sq = BitboardHelper.ClearAndGetIndexOfLSB(ref mask);
-                    updateAcc(0, whiteOffset + piece + sq);
-                    updateAcc(1, 384 - whiteOffset + piece + (sq ^ 56));
-                }
-            }
-        }
-
-        int eval = weights[6168], stm = board.IsWhiteToMove ? 0 : 1;
-
-        void sum(int side, int offset) {
-            for (int i = 0; i < 8; i++)
-                eval += Math.Clamp(accumulators[side, i], 0, 32) * weights[6152 + offset + i];
-        }
-
-        sum(stm, 0);
-        sum(1 - stm, 8);
-
-        return eval * 400 / 1024;
-    }
-
-    public int Search(Board board, Timer timer, int alpha, int beta, int depth, int ply) {
-        bool qs = depth <= 0, root = ply == 0;
-
-        if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
-            return 30000;
-
-        //nodes++;
-        ulong key = board.ZobristKey % 1048576;
-
-        if (!root && board.IsRepeatedPosition())
-            return 0;
-
-        if (qs) {
-            alpha = Math.Max(alpha, Evaluate(board));
-            if (alpha >= beta) return alpha;
-        }
-
-        Move[] moves = board.GetLegalMoves(qs);
-
-        if (!qs && moves.Length == 0)
-            return board.IsInCheck() ? -30000 + ply : 0;
-
-        int[] scores = new int[moves.Length];
-        for (int i = 0; i < moves.Length; i++) {
-            Move move = moves[i];
-            scores[i] = move == tt[key]
-                ? -1000000
-                : move.IsCapture
-                    ? (int)move.MovePieceType - 100 * (int)move.CapturePieceType
-                    : 1000000;
-        }
-
-        Array.Sort(scores, moves);
-
-        Move bestMove = Move.NullMove;
-
-        foreach (Move move in moves) {
-            board.MakeMove(move);
-            int score = -Search(board, timer, -beta, -alpha, depth - 1, ply + 1);
-            board.UndoMove(move);
-
-            if (score > alpha) {
-                alpha = score;
-                bestMove = move;
-                if (root) bestMoveRoot = move;
-                if (alpha >= beta) break;
-
-            }
-        }
-
-        tt[key] = bestMove;
-
-        return alpha;
-    }
-
-    //ulong nodes = 0;
-
     public Move Think(Board board, Timer timer)
     {
-        bestMoveRoot = Move.NullMove;
-        Move bestMove = bestMoveRoot;
-        // nodes = 0;
+        Move bestMove = default, bestMoveRoot = default;
 
-        for (int depth = 1; depth <= 50; depth++) {
-            int score = Search(board, timer, -30000, 30000, depth, 0);
+#if DEBUG
+        nodes = 0;
+#endif
+        for (int depth = 0; ++depth <= 50;)
+        {
+#if DEBUG
+            int score =
+#endif
+            Search(-30000, 30000, depth, 0);
 
             if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
                 break;
 
-            //Console.WriteLine($"info depth {depth} score: {score} nodes {nodes} pv {bestMoveRoot}");
+#if DEBUG
+            Console.WriteLine($"info depth {depth} score: {score} nodes {nodes} pv {bestMoveRoot}");
+#endif
 
             bestMove = bestMoveRoot;
         }
 
         return bestMove.IsNull ? board.GetLegalMoves()[0] : bestMove;
+
+        int Search(int alpha, int beta, int depth, int ply)
+        {
+            bool qs = depth <= 0, root = ply == 0;
+
+            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
+                return 30000;
+
+#if DEBUG
+            nodes++;
+#endif
+            ulong key = board.ZobristKey % 1048576;
+
+            if (!root && board.IsRepeatedPosition())
+                return 0;
+
+            if (qs)
+            {
+                alpha = Math.Max(alpha, Evaluate());
+                if (alpha >= beta) return alpha;
+            }
+
+            var moves = board.GetLegalMoves(qs);
+
+            if (!qs && moves.Length == 0)
+                return board.IsInCheck() ? ply - 30_000 : 0;
+
+            var scores = new int[moves.Length];
+            for (int i = 0; i < moves.Length; i++)
+            {
+                Move move = moves[i];
+                scores[i] = move == tt[key]
+                    ? -1000000
+                    : move.IsCapture
+                        ? (int)move.MovePieceType - 100 * (int)move.CapturePieceType
+                        : 1000000;
+            }
+
+            Array.Sort(scores, moves);
+
+            Move bestMove = default;
+
+            foreach (Move move in moves)
+            {
+                board.MakeMove(move);
+                int score = -Search(-beta, -alpha, depth - 1, ply + 1);
+                board.UndoMove(move);
+
+                if (score > alpha)
+                {
+                    alpha = score;
+                    bestMove = move;
+                    if (root) bestMoveRoot = move;
+                    if (alpha >= beta) break;
+
+                }
+            }
+
+            tt[key] = bestMove;
+
+            return alpha;
+        }
+
+        int Evaluate()
+        {
+            var accumulators = new int[2, 8];
+
+            void updateAcc(int side, int feature)
+            {
+                for (int i = 0; i < 8; i++)
+                    accumulators[side, i] += weights[feature * 8 + i];
+            }
+
+            updateAcc(0, 768);
+            updateAcc(1, 768);
+
+            foreach (bool side in new[] { true, false })
+                for (var p = 1; p <= 6; p++)
+                {
+                    int piece = p * 64 - 64, whiteOffset = side ? 0 : 384;
+                    ulong mask = board.GetPieceBitboard((PieceType)p, side);
+                    while (mask != 0)
+                    {
+                        int sq = BitboardHelper.ClearAndGetIndexOfLSB(ref mask);
+                        updateAcc(0, whiteOffset + piece + sq);
+                        updateAcc(1, 384 - whiteOffset + piece + (sq ^ 56));
+                    }
+                }
+
+            int eval = weights[6168], stm = board.IsWhiteToMove ? 0 : 1;
+
+            void sum(int side, int offset)
+            {
+                for (int i = 0; i < 8; i++)
+                    eval += Math.Clamp(accumulators[side, i], 0, 32) * weights[6152 + offset + i];
+            }
+
+            sum(stm, 0);
+            sum(1 - stm, 8);
+
+            return eval * 400 / 1024;
+        }
     }
 }
