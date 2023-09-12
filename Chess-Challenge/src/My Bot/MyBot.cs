@@ -31,7 +31,7 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
 #endif
     {
-        Move bestMove = default, bestMoveRoot = default;
+        Move bestMoveRoot = default;
 
 #if UCI
         nodes = 0;
@@ -58,19 +58,13 @@ public class MyBot : IChessBot
                 );
             }
 #endif
-
-            bestMove = bestMoveRoot;
         }
 
-        return bestMove.IsNull ? board.GetLegalMoves()[0] : bestMove;
+        return bestMoveRoot;
 
         int Search(int alpha, int beta, int depth, int ply)
         {
             bool qs = depth <= 0, root = ply == 0;
-
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
-                return 30000;
-
 #if UCI
             nodes++;
 #endif
@@ -107,6 +101,9 @@ public class MyBot : IChessBot
 
             foreach (Move move in moves)
             {
+                if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
+                    return 30000;
+
                 board.MakeMove(move);
                 int score = -Search(-beta, -alpha, depth - 1, ply + 1);
                 board.UndoMove(move);
