@@ -54,7 +54,7 @@ public class MyBot : IChessBot
                 ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
                 ulong nps = nodes * 1000 / Math.Max(time, 1);
                 Console.WriteLine(
-                    $"info depth {depth} score: {score} time {time} nodes {nodes} nps {nps}"
+                    $"info depth {depth} score cp {score} time {time} nodes {nodes} nps {nps}"
                 );
             }
 #endif
