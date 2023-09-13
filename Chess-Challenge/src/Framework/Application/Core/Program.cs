@@ -139,7 +139,7 @@ namespace ChessChallenge.Application
                 }
 
                 if(input_line == "tokens") {
-                    string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
+                    string path = Path.Combine(Directory.GetCurrentDirectory(), "Chess-Challenge", "src", "My Bot", "MyBot.cs");
                     Console.WriteLine(path);
                     using var stringReader = new StreamReader(path);
                     string text_code = stringReader.ReadToEnd();
