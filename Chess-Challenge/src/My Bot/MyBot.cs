@@ -16,7 +16,7 @@ public class MyBot : IChessBot
         {
             var packed = decimal.GetBits(packedWeights[i / 16]);
             int num = i % 16 * 6;
-            uint adj = ((uint)packed[num / 32] >> (num % 32)) & 63;
+            uint adj = (uint)packed[num / 32] >> num % 32 & 63;
             if (num == 30) adj += ((uint)packed[1] & 15) << 2;
             if (num == 60) adj += ((uint)packed[2] & 3) << 4;
             weights[i++] = (int)adj - 31;
@@ -85,7 +85,6 @@ public class MyBot : IChessBot
 
             var scores = new int[moves.Length];
             foreach (Move move in moves)
-            {
                 scores[moveIdx++] = move == tt[key]
                     ? -1000000
                     : move.IsCapture
@@ -93,7 +92,6 @@ public class MyBot : IChessBot
                         : move == killers[ply]
                             ? 500000
                             : 1000000;
-            }
 
             Array.Sort(scores, moves);
 
@@ -150,7 +148,6 @@ public class MyBot : IChessBot
 
             for (int i = 0; i < 16;)
                 eval += Math.Clamp(accumulators[i / 8 ^ (board.IsWhiteToMove ? 0 : 1), i % 8], 0, 32) * weights[6152 + i++];
-
 
             return eval * 400 / 1024;
         }
