@@ -32,6 +32,7 @@ public class MyBot : IChessBot
 #endif
     {
         Move bestMoveRoot = default;
+        var killers = new Move[128];
 
 #if UCI
         nodes = 0;
@@ -88,7 +89,9 @@ public class MyBot : IChessBot
                     ? -1000000
                     : move.IsCapture
                         ? (int)move.MovePieceType - 100 * (int)move.CapturePieceType
-                        : 1000000;
+                        : move == killers[ply]
+                            ? 500000
+                            : 1000000;
             }
 
             Array.Sort(scores, moves);
@@ -109,8 +112,11 @@ public class MyBot : IChessBot
                     alpha = score;
                     bestMove = move;
                     if (root) bestMoveRoot = move;
-                    if (alpha >= beta) break;
-
+                    if (alpha >= beta) {
+                        if (!move.IsCapture)
+                            killers[ply] = move;
+                        break;
+                    }
                 }
             }
 
