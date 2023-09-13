@@ -96,7 +96,7 @@ public class MyBot : IChessBot
 
             Array.Sort(scores, moves);
 
-            Move bestMove = default;
+            tt[key] = default;
 
             foreach (Move move in moves)
             {
@@ -110,7 +110,7 @@ public class MyBot : IChessBot
                 if (score > alpha)
                 {
                     alpha = score;
-                    bestMove = move;
+                    tt[key] = move;
                     if (root) bestMoveRoot = move;
                     if (alpha >= beta) {
                         if (!move.IsCapture)
@@ -119,8 +119,6 @@ public class MyBot : IChessBot
                     }
                 }
             }
-
-            tt[key] = bestMove;
 
             return alpha;
         }
