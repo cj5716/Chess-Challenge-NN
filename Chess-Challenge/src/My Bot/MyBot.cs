@@ -36,19 +36,15 @@ public class MyBot : IChessBot
 
 #if UCI
         nodes = 0;
-        for (int depth = 0; ++depth <= maxDepth;)
+        for (int depth = 0; ++depth <= maxDepth && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30;)
 #else
-        for (int depth = 0; ++depth <= 50;)
+        for (int depth = 0; ++depth <= 50 && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30;)
 #endif
         {
 #if UCI
             int score =
 #endif
             Search(-30000, 30000, depth, 0);
-
-            if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
-                break;
-
 #if UCI
             if (report)
             {
