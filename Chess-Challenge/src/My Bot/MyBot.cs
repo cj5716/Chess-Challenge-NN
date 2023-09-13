@@ -46,7 +46,7 @@ public class MyBot : IChessBot
 #endif
             Search(-30000, 30000, depth, 0);
 #if UCI
-            if (report)
+            if (report && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30)
             {
                 ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
                 ulong nps = nodes * 1000 / Math.Max(time, 1);
