@@ -4,7 +4,9 @@
 To compile a self-contained UCI executable, first identify the appropriate runtime identifier:
 - `win-x64` for Windows
 - `linux-x64` for Linux
+
 for other operating systems/errors, refer to the [docs](https://learn.microsoft.com/en-us/dotnet/core/rid-catalog).
+
 Then run
 ```
 make OS=<runtime identifier>
