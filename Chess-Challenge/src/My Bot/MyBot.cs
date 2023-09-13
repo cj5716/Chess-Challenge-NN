@@ -66,13 +66,13 @@ public class MyBot : IChessBot
             if (inCheck)
                 depth++;
 
-            bool qs = depth <= 0, root = ply == 0;
+            bool qs = depth <= 0;
 #if UCI
             nodes++;
 #endif
             ulong key = board.ZobristKey % 1048576, moveIdx = 0;
 
-            if (!root && board.IsRepeatedPosition())
+            if (ply > 0 && board.IsRepeatedPosition())
                 return 0;
 
             if (qs && (alpha = Math.Max(alpha, Evaluate())) >= beta)
@@ -112,7 +112,7 @@ public class MyBot : IChessBot
                 {
                     alpha = score;
                     tt[key] = move;
-                    if (root) bestMoveRoot = move;
+                    if (ply == 0) bestMoveRoot = move;
                     if (alpha >= beta) {
                         if (!move.IsCapture)
                             killers[ply] = move;
