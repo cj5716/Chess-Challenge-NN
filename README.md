@@ -18,8 +18,15 @@ make OS=<runtime identifier>
 - Iterative Deepening
 
 #### Move ordering
-- Transposition Table
-- MVV-LVA for Captures
+1. Hash Move
+2. Captures (MVV-LVA)
+3. Killer Moves
+4. Quiets
+
+#### Selectivity
+- Check Extensions
+- Internal Iterative Deepening
+
 
 ### Evaluation
-- `768 -> 8x2 -> 1` Neural Network trained using my own trainer, [bullet](https://github.com/jw1912/bullet).
+- `768 -> 8x2 -> 1` Neural Network trained using a modified version of my trainer, [bullet](https://github.com/jw1912/bullet/tree/seb).
