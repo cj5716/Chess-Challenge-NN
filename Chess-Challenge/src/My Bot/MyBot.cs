@@ -61,6 +61,11 @@ public class MyBot : IChessBot
 
         int Search(int alpha, int beta, int depth, int ply)
         {
+            bool inCheck = board.IsInCheck();
+
+            if (inCheck)
+                depth++;
+
             bool qs = depth <= 0, root = ply == 0;
 #if UCI
             nodes++;
@@ -76,7 +81,7 @@ public class MyBot : IChessBot
             var moves = board.GetLegalMoves(qs);
 
             if (!qs && moves.Length == 0)
-                return board.IsInCheck() ? ply - 30_000 : 0;
+                return inCheck ? ply - 30_000 : 0;
 
             var scores = new int[moves.Length];
             foreach (Move move in moves)
