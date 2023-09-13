@@ -22,4 +22,4 @@ make OS=<runtime identifier>
 - MVV-LVA for Captures
 
 ### Evaluation
-- `768 -> 8x2 -> 1` Neural Network
+- `768 -> 8x2 -> 1` Neural Network trained using my own trainer, [bullet](https://github.com/jw1912/bullet).
