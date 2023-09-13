@@ -100,7 +100,7 @@ public class MyBot : IChessBot
 
             foreach (Move move in moves)
             {
-                if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
+                if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 10)
                     return 30000;
 
                 board.MakeMove(move);
