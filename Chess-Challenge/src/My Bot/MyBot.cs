@@ -1,4 +1,4 @@
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 using System;
 
 public class MyBot : IChessBot
@@ -28,17 +28,17 @@ public class MyBot : IChessBot
 
     public Move ThinkInternal(Board board, Timer timer, int maxDepth = 50, bool report = true)
 #else
-    public Move Think(Board board, ChessChallenge.API.Timer timer)
+    public Move Think(Board board, Timer timer)
 #endif
     {
         Move bestMoveRoot = default;
         var killers = new Move[128];
-        int maxTime = timer.MillisecondsRemaining / 30, iterDepth = 1;
+        int iterDepth = 1;
 #if UCI
         nodes = 0;
-        for (int depth = 0; ++depth <= maxDepth && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30;)
+        for (iterDepth = 1; iterDepth <= maxDepth && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30;)
 #else
-        while (timer.MillisecondsElapsedThisTurn < maxTime)
+        while (timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30)
 #endif
         {
 #if UCI
@@ -51,7 +51,7 @@ public class MyBot : IChessBot
                 ulong time = (ulong)timer.MillisecondsElapsedThisTurn;
                 ulong nps = nodes * 1000 / Math.Max(time, 1);
                 Console.WriteLine(
-                    $"info depth {depth} score cp {score} time {time} nodes {nodes} nps {nps}"
+                    $"info depth {iterDepth} score cp {score} time {time} nodes {nodes} nps {nps}"
                 );
             }
 #endif
@@ -104,7 +104,7 @@ public class MyBot : IChessBot
 
             foreach (Move move in moves)
             {
-                if (timer.MillisecondsElapsedThisTurn >= maxTime * 2)
+                if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 15)
                     return 30000;
 
                 board.MakeMove(move);
