@@ -27,7 +27,7 @@ make OS=<runtime identifier>
 
 #### Selectivity
 - Check Extensions
-- Internal Iterative Deepening
+- Reverse Futility Pruning
 
 
 ### Evaluation

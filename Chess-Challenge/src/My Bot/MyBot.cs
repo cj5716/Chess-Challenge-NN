@@ -78,10 +78,10 @@ public class MyBot : IChessBot
             if (qs && (alpha = Math.Max(alpha, Evaluate())) >= beta)
                 return alpha;
 
-            ref var hashMove = ref tt[board.ZobristKey % 1048576];
+            if (!qs && !inCheck && depth <= 8 && Evaluate() >= beta + 120 * depth)
+                return beta;
 
-            if (hashMove.IsNull)
-                depth--;
+            ref var hashMove = ref tt[board.ZobristKey % 1048576];
 
             var moves = board.GetLegalMoves(qs);
 
