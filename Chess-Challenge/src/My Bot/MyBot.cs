@@ -1,5 +1,6 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -8,7 +9,8 @@ public class MyBot : IChessBot
 #endif
 
     readonly int[] weights = new int[3097];
-    readonly Move[] tt = new Move[1048576];
+    // Key, move, depth, score, flag
+    readonly (ulong, Move, int, int, byte)[] tt = new (ulong, Move, int, int, byte)[1048576];
 
     public MyBot()
     {
@@ -94,31 +96,27 @@ public class MyBot : IChessBot
                 && Evaluate() >= beta + 120 * depth)
                 return beta;
 
-            ref var hashMove = ref tt[board.ZobristKey % 1048576];
+            ulong key = board.ZobristKey;
 
-            var moves = board.GetLegalMoves(qs);
+            var (ttKey, ttMove, ttDepth, ttScore, ttFlag) = tt[key % 1048576];
 
-            // Checkmate/Stalemate
-            if (!qs && moves.Length == 0)
-                return inCheck ? ply - 30_000 : 0;
+            if (ttKey == key && ply > 0 && (ttFlag == 0 && ttScore <= alpha) || (ttFlag == 2 && ttScore >= beta) || ttFlag == 1)
+                return ttScore;
 
-            // Score moves
-            var scores = new int[moves.Length];
-            foreach (Move move in moves)
-                scores[moveIdx++] = -(
-                    move == hashMove
+            int bestScore = -30_000;
+            ttFlag = 0; // Upper
+
+            var moves = board.GetLegalMoves(qs).OrderByDescending(move => move == ttMove
                         ? 100_000_000
                         : move.IsCapture
                             ? 90_000_000 + 100 * (int)move.CapturePieceType - (int)move.MovePieceType
                             : move == killers[ply]
                                 ? 80_000_000
-                                : history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index]
-                );
+                                : history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index]);
 
-            Array.Sort(scores, moves);
-
-            Move bestMove = default;
-            moveIdx = 0;
+            // Checkmate/Stalemate
+            if (!qs && moves.Length == 0)
+                return inCheck ? ply - 30_000 : 0;
 
             foreach (Move move in moves)
             {
@@ -137,29 +135,29 @@ public class MyBot : IChessBot
 
                 board.UndoMove(move);
 
-                if (score > alpha)
+                if (score > bestScore)
                 {
-                    alpha = score;
-                    bestMove = move;
-
-                    if (ply == 0)
-                        bestMoveRoot = bestMove;
-
-                    if (alpha >= beta)
+                    bestScore = score;
+                    if (score > alpha)
                     {
-                        // Quiet cutoffs update tables
-                        if (!move.IsCapture)
-                        {
-                            killers[ply] = move;
-                            history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index] += depth;
+                        ttFlag = 1; // Exact
+                        alpha = score;
+                        ttMove = move;
+                        if (ply == 0) bestMoveRoot = move;
+                        if (alpha >= beta) {
+                            // Quiet cutoffs update tables
+                            if (!move.IsCapture)
+                            {
+                                killers[ply] = move;
+                                history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index] += depth;
+                            }
+                            ttFlag++; // Lower
+                            break;
                         }
-
-                        break;
                     }
                 }
             }
-
-            hashMove = bestMove;
+            tt[key % 1048576] = (key, ttMove, depth, bestScore, ttFlag);
 
             return alpha;
         }
@@ -182,7 +180,7 @@ public class MyBot : IChessBot
 
             for (int stm = 2; --stm >= 0;)
             {
-                for (var p = 0; p <= 5; p++)
+                for (var p = 0; ++p <= 5;)
                     for (ulong mask = board.GetPieceBitboard((PieceType)p + 1, stm > 0); mask != 0;)
                     {
                         mat += (int)(0x3847D12C4B064 >> 10 * p & 0x3FF);
