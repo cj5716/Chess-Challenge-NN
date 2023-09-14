@@ -149,7 +149,7 @@ public class MyBot : IChessBot
                 for (var p = 0; p <= 5; p++)
                     for (ulong mask = board.GetPieceBitboard((PieceType)p + 1, stm > 0); mask != 0;)
                     {
-                        mat += 100 * (int)(0x095331 >> 4 * p & 15);
+                        mat += (int)(0x3847D12C4B064 >> 10 * p & 0x3FF);
                         int sq = BitboardHelper.ClearAndGetIndexOfLSB(ref mask);
                         sq = sq / 8 * 4 + (int)(0x1BE4 >> 2 * (sq & 7) & 3);
                         updateAccumulator(0, 192 - stm * 192 + p * 32 + sq);
