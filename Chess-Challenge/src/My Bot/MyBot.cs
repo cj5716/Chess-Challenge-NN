@@ -115,7 +115,6 @@ public class MyBot : IChessBot
                 {
                     alpha = score;
                     bestMove = move;
-                    if (ply == 0) bestMoveRoot = move;
                     if (alpha >= beta)
                     {
                         if (!move.IsCapture)
@@ -124,6 +123,9 @@ public class MyBot : IChessBot
                     }
                 }
             }
+
+            if (ply == 0)
+                bestMoveRoot = bestMove;
 
             hashMove = bestMove;
 
