@@ -36,6 +36,7 @@ public class MyBot : IChessBot
     {
         Move bestMoveRoot = default;
         var killers = new Move[128];
+        var history = new int[2, 64, 64];
         int iterDepth = 1;
 #if UCI
         nodes = 0;
@@ -98,13 +99,15 @@ public class MyBot : IChessBot
 
             var scores = new int[moves.Length];
             foreach (Move move in moves)
-                scores[moveIdx++] = move == hashMove
-                    ? -1000000
-                    : move.IsCapture
-                        ? (int)move.MovePieceType - 100 * (int)move.CapturePieceType
-                        : move == killers[ply]
-                            ? 500000
-                            : 1000000;
+                scores[moveIdx++] = -(
+                    move == hashMove
+                        ? 100_000_000
+                        : move.IsCapture
+                            ? 90_000_000 + 100 * (int)move.CapturePieceType - (int)move.MovePieceType
+                            : move == killers[ply]
+                                ? 80_000_000
+                                : history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index]
+                );
 
             Array.Sort(scores, moves);
 
@@ -126,7 +129,10 @@ public class MyBot : IChessBot
                     if (alpha >= beta)
                     {
                         if (!move.IsCapture)
+                        {
                             killers[ply] = move;
+                            history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index] += depth;
+                        }
                         break;
                     }
                 }
