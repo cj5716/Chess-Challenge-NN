@@ -132,7 +132,7 @@ public class MyBot : IChessBot
                     || qs
                     || depth < 2
                     || move.IsCapture
-                    || ((score = -Search(-alpha - 1, -alpha, depth - 2, ply + 1)) > alpha))
+                    || (score = -Search(-alpha - 1, -alpha, depth - 2, ply + 1)) > alpha)
                     score = -Search(-beta, -alpha, depth - 1, ply + 1);
 
                 board.UndoMove(move);
@@ -153,6 +153,7 @@ public class MyBot : IChessBot
                             killers[ply] = move;
                             history[ply % 2, move.StartSquare.Index, move.TargetSquare.Index] += depth;
                         }
+
                         break;
                     }
                 }
