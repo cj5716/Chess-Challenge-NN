@@ -42,7 +42,7 @@ public class MyBot : IChessBot
         nodes = 0;
         for (iterDepth = 1; iterDepth <= maxDepth && timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30;)
 #else
-        while (NotTimeUp(30))
+        while (timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 30)
 #endif
         {
 #if UCI
@@ -62,11 +62,6 @@ public class MyBot : IChessBot
         }
 
         return bestMoveRoot;
-
-        bool NotTimeUp(int divisor = 15)
-        {
-            return timer.MillisecondsElapsedThisTurn < timer.MillisecondsRemaining / 15;
-        }
 
         int Search(int alpha, int beta, int depth, int ply)
         {
@@ -123,7 +118,7 @@ public class MyBot : IChessBot
 
             foreach (Move move in moves)
             {
-                if (!NotTimeUp())
+                if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 15)
                     return 30000;
 
                 board.MakeMove(move);
@@ -141,6 +136,10 @@ public class MyBot : IChessBot
                 {
                     alpha = score;
                     bestMove = move;
+
+                    if (ply == 0)
+                        bestMoveRoot = bestMove;
+
                     if (alpha >= beta)
                     {
                         if (!move.IsCapture)
@@ -152,9 +151,6 @@ public class MyBot : IChessBot
                     }
                 }
             }
-
-            if (ply == 0 && NotTimeUp())
-                bestMoveRoot = bestMove;
 
             hashMove = bestMove;
 
