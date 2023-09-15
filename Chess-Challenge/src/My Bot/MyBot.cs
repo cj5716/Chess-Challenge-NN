@@ -112,6 +112,14 @@ public class MyBot : IChessBot
             Array.Sort(scores, moves);
 
             Move bestMove = default;
+            moveIdx = 0;
+            int score;
+
+            int alphaWindow(int lower, int reduction = 1)
+            {
+                return score = -Search(-lower, -alpha, depth - reduction, ply + 1);
+            }
+
 
             foreach (Move move in moves)
             {
@@ -119,7 +127,14 @@ public class MyBot : IChessBot
                     return 30000;
 
                 board.MakeMove(move);
-                int score = -Search(-beta, -alpha, depth - 1, ply + 1);
+
+                if (moveIdx++ == 0
+                    || qs
+                    || depth < 2
+                    || scores[moveIdx - 1] <= -80_000_000
+                    || (alphaWindow(alpha + 1, 2) > alpha))
+                    alphaWindow(beta);
+
                 board.UndoMove(move);
 
                 if (score > alpha)
