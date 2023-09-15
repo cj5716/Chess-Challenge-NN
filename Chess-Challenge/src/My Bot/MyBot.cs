@@ -131,7 +131,7 @@ public class MyBot : IChessBot
                 if (moveIdx++ == 0
                     || qs
                     || depth < 2
-                    || scores[moveIdx - 1] <= -80_000_000
+                    || move.IsCapture
                     || ((score = -Search(-alpha - 1, -alpha, depth - 2, ply + 1)) > alpha))
                     score = -Search(-beta, -alpha, depth - 1, ply + 1);
 
