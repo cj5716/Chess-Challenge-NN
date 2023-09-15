@@ -12,6 +12,10 @@ public class MyBot : IChessBot
 
     public MyBot()
     {
+        // Extract weights
+        // Weights are quantised into 6 bits, so 16 values are
+        // packed into one `decimal`, allowing all weights to
+        // be packed into 194 decimals
         for (int i = 0; i < 3097;)
         {
             var packed = decimal.GetBits(packedWeights[i / 16]);
@@ -74,24 +78,31 @@ public class MyBot : IChessBot
 #if UCI
             nodes++;
 #endif
-            ulong moveIdx = 0;
+            int moveIdx = 0, score;
 
             if (ply > 0 && board.IsRepeatedPosition())
                 return 0;
 
+            // Stand Pat
             if (qs && (alpha = Math.Max(alpha, Evaluate())) >= beta)
                 return alpha;
 
-            if (!qs && !inCheck && depth <= 8 && Evaluate() >= beta + 120 * depth)
+            // Reverse Futility Pruning
+            if (!qs
+                && !inCheck
+                && depth <= 8
+                && Evaluate() >= beta + 120 * depth)
                 return beta;
 
             ref var hashMove = ref tt[board.ZobristKey % 1048576];
 
             var moves = board.GetLegalMoves(qs);
 
+            // Checkmate/Stalemate
             if (!qs && moves.Length == 0)
                 return inCheck ? ply - 30_000 : 0;
 
+            // Score moves
             var scores = new int[moves.Length];
             foreach (Move move in moves)
                 scores[moveIdx++] = -(
@@ -108,13 +119,6 @@ public class MyBot : IChessBot
 
             Move bestMove = default;
             moveIdx = 0;
-            int score;
-
-            int alphaWindow(int lower, int reduction = 1)
-            {
-                return score = -Search(-lower, -alpha, depth - reduction, ply + 1);
-            }
-
 
             foreach (Move move in moves)
             {
@@ -123,12 +127,13 @@ public class MyBot : IChessBot
 
                 board.MakeMove(move);
 
+                // Principle Variation Search + Late Move Reductions
                 if (moveIdx++ == 0
                     || qs
                     || depth < 2
                     || scores[moveIdx - 1] <= -80_000_000
-                    || (alphaWindow(alpha + 1, 2) > alpha))
-                    alphaWindow(beta);
+                    || ((score = -Search(-alpha - 1, -alpha, depth - 2, ply + 1)) > alpha))
+                    score = -Search(-beta, -alpha, depth - 1, ply + 1);
 
                 board.UndoMove(move);
 
@@ -142,6 +147,7 @@ public class MyBot : IChessBot
 
                     if (alpha >= beta)
                     {
+                        // Quiet cutoffs update tables
                         if (!move.IsCapture)
                         {
                             killers[ply] = move;
@@ -162,12 +168,14 @@ public class MyBot : IChessBot
             var accumulators = new int[2, 8];
             int mat = 0;
 
+            // Adds a feature (colour, piece, square) to given accumulator
             void updateAccumulator(int side, int feature)
             {
                 for (int i = 0; i < 8;)
                     accumulators[side, i] += weights[feature * 8 + i++];
             }
 
+            // Initialise with input biases
             updateAccumulator(0, 384);
             updateAccumulator(1, 384);
 
@@ -178,18 +186,25 @@ public class MyBot : IChessBot
                     {
                         mat += (int)(0x3847D12C4B064 >> 10 * p & 0x3FF);
                         int sq = BitboardHelper.ClearAndGetIndexOfLSB(ref mask);
+
+                        // Input is horizontally mirrored
                         sq = sq / 8 * 4 + (int)(0x1BE4 >> 2 * (sq & 7) & 3);
+
+                        // Add feature from each perspective
                         updateAccumulator(0, 192 - stm * 192 + p * 32 + sq);
                         updateAccumulator(1, stm * 192 + p * 32 + (sq ^ 28));
                     }
                 mat = -mat;
             }
 
+            // Initialise with output bias
             int eval = weights[3096];
 
+            // Compute hidden -> output layer
             for (int i = 0; i < 16;)
                 eval += Math.Clamp(accumulators[i / 8 ^ (board.IsWhiteToMove ? 0 : 1), i % 8], 0, 32) * weights[3080 + i++];
 
+            // Scale + Material Factoriser
             return eval * 400 / 1024 + (board.IsWhiteToMove ? mat : -mat);
         }
     }
