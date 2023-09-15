@@ -24,7 +24,10 @@ public class MyBot : IChessBot
     }
 
 #if UCI
-    public Move Think(Board board, Timer timer) => ThinkInternal(board, timer);
+    public Move Think(Board board, Timer timer)
+    {
+        return ThinkInternal(board, timer);
+    }
 
     public Move ThinkInternal(Board board, Timer timer, int maxDepth = 50, bool report = true)
 #else
