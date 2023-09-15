@@ -100,7 +100,7 @@ public class MyBot : IChessBot
 
             var (ttKey, ttMove, ttDepth, ttScore, ttFlag) = tt[key % 1048576];
 
-            if (ttKey == key && ply > 0 && (ttFlag == 0 && ttScore <= alpha) || (ttFlag == 2 && ttScore >= beta) || ttFlag == 1)
+            if (ttKey == key && ttDepth >= depth && ply > 0 && (ttFlag == 0 && ttScore <= alpha || ttFlag == 2 && ttScore >= beta || ttFlag == 1))
                 return ttScore;
 
             int bestScore = -30_000;
